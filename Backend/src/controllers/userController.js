@@ -77,6 +77,41 @@ const userController = {
       });
     }
   },
+  detail: async (req, res) => {
+    try {
+      let {id}= req?.params;
+      let protocol = req.protocol;
+      let host = req.headers.host;
+      if (!isNaN(id)) {
+        let userDetail = await usersModel.findByPk(id);
+        if (userDetail !== null && userDetail !== "undefined" && userDetail !== "") {
+          let img = `${protocol}://${host}/img/${userDetail.image}`
+          let result ={
+            name: userDetail.name,
+            email: userDetail.email,
+            image:img,
+            addres: userDetail.addres,
+            phone:userDetail.phone,
+            occupation:userDetail.occupation
+          }
+          res.status(200).json({
+            userDetail:result,
+          });
+        }else{
+          res.status(404).json({
+            error: "no exite usuario con el parametro enviado",
+          });
+        }
+      }else{
+        res.status(404).json({
+          error: "parametro invalido",
+        });
+      }
+    
+    } catch (error) {
+      
+    }
+  }
 };
 
 module.exports = userController;

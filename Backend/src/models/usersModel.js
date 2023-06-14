@@ -15,11 +15,12 @@ const usersModel = {
   },
   findByPk: async (id) => {
     try {
-      const user = await db.users.findByPk(id);
+      const user = await db.users.findByPk(id,{
+        attributes: ["name","email","image","addres","phone","occupation"]
+      });
       return user;
     } catch (error) {
-      console.log(error);
-      throw new Error("user not found");
+      throw new Error("detalle de usuario no encontrado "+error.message);
     }
   },
   create: async (dates, file) => {
@@ -31,7 +32,7 @@ const usersModel = {
       });
       return create;
     } catch (error) {
-      throw new Error("user not create" + error.message);
+      throw new Error("usuario no creado " + error.message);
     }
   },
 

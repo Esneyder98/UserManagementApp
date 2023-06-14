@@ -7,6 +7,6 @@ const validateCreateUsers = require("../middlewares/validateCreateUsers")
 
 router.get('/', cors(),userController.list)
 router.post('/', cors(),imgUser.single('image'),validateCreateUsers,userController.create);
-
+router.get('/:id', cors(),userController.detail)
 
 module.exports = router;

@@ -1,5 +1,6 @@
 const res = require("express/lib/response");
 const db = require("../database/models");
+const e = require("cors");
 
 const usersModel = {
   // seleccina todos los registos existentes en la tabla users
@@ -13,6 +14,7 @@ const usersModel = {
       throw new Error("users not found"+error.message);
     }
   },
+  // selecciona un usuario por su id
   findByPk: async (id) => {
     try {
       const user = await db.users.findByPk(id,{
@@ -23,6 +25,7 @@ const usersModel = {
       throw new Error("detalle de usuario no encontrado "+error.message);
     }
   },
+  // creacion de usuarios con sus datos e imagen
   create: async (dates, file) => {
     try {
       const { filename } = file;
@@ -35,7 +38,7 @@ const usersModel = {
       throw new Error("usuario no creado " + error.message);
     }
   },
-
+// actualizacion de datos de usuario o imagen
   update: async (id, dates) => {
     try {
       let update;
@@ -52,7 +55,7 @@ const usersModel = {
       throw new Error("usuario no actualizado "+error.message);
     }
   },
-
+// eliminacion de usuario por su id
   delete: async (id) => {
     try {
       const deletee = await db.users.destroy({
@@ -62,10 +65,11 @@ const usersModel = {
       });
       return deletee;
     } catch (error) {
-      console.log(error.message);
+      throw new Error("Error usuario no eliminado: "+error.message)
     }
   },
-  findByEmail: async function (email) {
+  // seleccion de email usuario para validar si ya existe ese email
+    findByEmail: async function (email) {
     try {
       const user = await db.users.findOne({
         where: {

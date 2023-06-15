@@ -244,5 +244,47 @@ const userController = {
       });
     }
   },
+  delete: async (req,res) =>{
+    try {
+      const {id} = req.params;
+      if (!isNaN(id)) {
+        let user = await usersModel.findByPk(id);
+        if (user == null || user == undefined || user == '') {
+          res.status(404).json({
+            error: "Usuario no encontrado",
+          });
+        }else{
+          let image = user.image
+          let deleteUser = await usersModel.delete(id);
+          if(deleteUser > 0){
+            // si el usuario tenia una imagen asociada diferente a la por defecto la elimina
+            if( user?.image != "default-user.png"){
+              fs.existsSync(path.join(__dirname, "../../public/img/" + image))
+              ? fs.unlinkSync(path.join(__dirname,"../../public/img/" + image))
+              : null
+            }
+           
+            res.status(200).json({
+              message: "Usuario Eliminado Correctamente"
+            })
+          }else{
+            res.status(404).json({
+              error: "Usuario no eliminado",
+            });
+          }
+        }
+      }else{
+        res.status(404).json({
+          error: "parametro invalido",
+        });
+      }
+    } catch (error) {
+      res.status(500).json({
+        error: error.message,
+      });
+    }
+    
+
+  }
 };
 module.exports = userController;

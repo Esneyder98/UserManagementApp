@@ -48,9 +48,8 @@ const usersModel = {
         }
       );
       return update;
-      // }
     } catch (error) {
-      throw new Error("User not update");
+      throw new Error("usuario no actualizado "+error.message);
     }
   },
 

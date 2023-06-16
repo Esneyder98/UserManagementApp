@@ -94,6 +94,21 @@ const usersModel = {
       throw new Error("usuario no encontrado " + err.message);
     }
   },
+  findPage: async (page) => {
+    try {
+      const pageSize = 5; // Número máximo de usuarios por página
+      const offset = (page - 1) * pageSize; // Cálculo del offset
   
+      const list = await db.users.findAll({
+        attributes: ["name", "email", "image"],
+        limit: pageSize,
+        offset: offset,
+      });
+  
+      return list;
+    } catch (error) {
+      throw new Error("paginación usuarios" + error.message);
+    }
+  }
 };
 module.exports = usersModel;

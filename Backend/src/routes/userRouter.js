@@ -10,11 +10,13 @@ const userLoggedMiddleware = require('../middlewares/userLoggedMiddleware');
 const checkApiKey = require('../middlewares/auth.handler');
 
 router.get('/', cors(),userController.list);
-router.post('/', cors(),userLoggedMiddleware,checkApiKey,imgUser.single('image'),validateCreateUsers,userController.create);
+router.get("/pagination/:page",cors(), userController.pagination);
+router.post('/', cors(),imgUser.single('image'),validateCreateUsers,userController.create);
 router.get('/:id', cors(),userController.detail);
 router.put('/:id', cors(),userLoggedMiddleware,checkApiKey,imgUser.single('image'),validateUpdateUsers,userController.update);
 router.delete('/:id', cors(),userLoggedMiddleware,checkApiKey,userController.delete);
 router.post("/login", cors(), validateLoginUser, userController.login);
 router.get("/logout", cors(), userController.logout);
+
 
 module.exports = router;

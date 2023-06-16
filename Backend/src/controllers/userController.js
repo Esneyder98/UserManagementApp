@@ -360,5 +360,42 @@ const userController = {
       return error.message;
     }
   },
+  pagination: async (req, res) => {
+    let { page } = req.params;
+    let protocol = req.protocol;
+    let host = req.headers.host;
+    if (!isNaN(page)) {
+      let amount = await usersModel.findAll();
+      if (amount.length > 0) {
+        let users = await usersModel.findPage(page);
+        if (users.length > 0) {
+          let result = users.map((user) => {
+            let img = `${protocol}://${host}/img/${user.image}`;
+            return {
+              name: user.name,
+              email: user.email,
+              image: img,
+            };
+          });
+          res.status(200).json({ 
+            length: amount.length,
+            users: result 
+          });
+        }else{
+          res.status(404).json({
+            error: "no hay mas usuarios por mostrar",
+          });
+        }
+      } else {
+        res.status(404).json({
+          error: "no hay usuarios registrados",
+        });
+      }
+    } else {
+      res.status(404).json({
+        error: "parametro invalido",
+      });
+    }
+  },
 };
 module.exports = userController;

@@ -94,5 +94,6 @@ const usersModel = {
       throw new Error("usuario no encontrado " + err.message);
     }
   },
+  
 };
 module.exports = usersModel;

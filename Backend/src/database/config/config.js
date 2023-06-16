@@ -6,6 +6,7 @@ let DATABASE_NAME = env.DATABASE_NAME
 let DATABASE_HOST 	= env.DATABASE_HOST
 let DATABASE_DIALECT = env.DATABASE_DIALECT
 let DATABASE_PORT = env.DATABASE_PORT
+let jwtSecret = env.JWT_SECRET
 
 module.exports = {
 	development: {
@@ -15,6 +16,7 @@ module.exports = {
 		host: env.DATABASE_HOST,
 		dialect: env.DATABASE_DIALECT,
 		port: env.DATABASE_PORT,
+		jwtSecret: env.JWT_SECRET,
 	},
 	test: {
 		username: env.USER,
@@ -23,6 +25,7 @@ module.exports = {
 		host: env.DATABASE_HOST,
 		dialect: env.DATABASE_DIALECT,
 		port: env.DATABASE_PORT,
+		jwtSecret: env.JWT_SECRET,
 	},
 	production: {
 		username: env.USER,
@@ -31,5 +34,6 @@ module.exports = {
 		host: env.DATABASE_HOST,
 		dialect: env.DATABASE_DIALECT,
 		port: env.DATABASE_PORT,
+		jwtSecret: env.JWT_SECRET,
 	},
 	}

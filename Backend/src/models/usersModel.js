@@ -82,5 +82,17 @@ const usersModel = {
       throw new Error("Error al buscar usuario por email: " + err.message);
     }
   },
+  findByLogin: async function (email) {
+    try {
+      const user = await db.users.findOne({
+        where: {
+          email: email,
+        },
+      });
+      return user;
+    } catch (err) {
+      throw new Error("usuario no encontrado " + err.message);
+    }
+  },
 };
 module.exports = usersModel;

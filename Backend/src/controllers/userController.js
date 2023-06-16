@@ -3,6 +3,10 @@ const bcryptjs = require("bcryptjs");
 const path = require("path");
 const fs = require("fs");
 const { validationResult } = require("express-validator");
+const jwt = require("jsonwebtoken");
+const basename = path.basename(__filename);
+const env = process.env.NODE_ENV || "development";
+const config = require("../database/config/config");
 
 const userController = {
   list: async (req, res) => {
@@ -139,7 +143,7 @@ const userController = {
           let body = req?.body;
           const file = req?.file;
           let detail = await usersModel.findByPk(id);
-          let oldImage = detail.image;
+          let oldImage = detail?.image;
           if (req?.body?.password) {
             // si no se realizaron los cambios eliminamos la imagen cargada
             fs.existsSync(
@@ -157,18 +161,18 @@ const userController = {
                 "No esta permitido actualizar la contraseña de esta manera",
             });
           } else {
-            file
-              ? (update = await usersModel.update(id, {
-                  ...body,
-                  image: file.filename,
-                }))
-              : (update = await usersModel.update(id, { ...body }));
-            if (update[0] == 1) {
-              if (detail == null || detail == undefined) {
-                res.status(404).json({
-                  message: "Usuario no encontrado",
-                });
-              } else {
+            if (detail == null || detail == undefined) {
+              res.status(404).json({
+                error: "Usuario no encontrado",
+              });
+            } else {
+              file
+                ? (update = await usersModel.update(id, {
+                    ...body,
+                    image: file.filename,
+                  }))
+                : (update = await usersModel.update(id, { ...body }));
+              if (update[0] == 1) {
                 // eliminamos la imagen antigua
                 let validation = [null, undefined, "", "default-user.png"];
                 if (!validation.includes(oldImage) && file) {
@@ -197,23 +201,26 @@ const userController = {
                   message: "Update",
                   data: result,
                 });
-              }
-            } else {
-              // si no se realizaron los cambios eliminamos la imagen cargada
-              fs.existsSync(
-                path.join(__dirname, "../../public/img/" + req?.file?.filename)
-              )
-                ? fs.unlinkSync(
-                    path.join(
-                      __dirname,
-                      "../../public/img/" + req?.file?.filename
-                    )
+              } else {
+                // si no se realizaron los cambios eliminamos la imagen cargada
+                fs.existsSync(
+                  path.join(
+                    __dirname,
+                    "../../public/img/" + req?.file?.filename
                   )
-                : null;
+                )
+                  ? fs.unlinkSync(
+                      path.join(
+                        __dirname,
+                        "../../public/img/" + req?.file?.filename
+                      )
+                    )
+                  : null;
 
-              res.status(404).json({
-                message: "cambios no realizados",
-              });
+                res.status(404).json({
+                  error: "No se encontraron datos a actualizar",
+                });
+              }
             }
           }
         }
@@ -244,36 +251,38 @@ const userController = {
       });
     }
   },
-  delete: async (req,res) =>{
+  delete: async (req, res) => {
     try {
-      const {id} = req.params;
+      const { id } = req.params;
       if (!isNaN(id)) {
         let user = await usersModel.findByPk(id);
-        if (user == null || user == undefined || user == '') {
+        if (user == null || user == undefined || user == "") {
           res.status(404).json({
             error: "Usuario no encontrado",
           });
-        }else{
-          let image = user.image
+        } else {
+          let image = user.image;
           let deleteUser = await usersModel.delete(id);
-          if(deleteUser > 0){
+          if (deleteUser > 0) {
             // si el usuario tenia una imagen asociada diferente a la por defecto la elimina
-            if( user?.image != "default-user.png"){
+            if (user?.image != "default-user.png") {
               fs.existsSync(path.join(__dirname, "../../public/img/" + image))
-              ? fs.unlinkSync(path.join(__dirname,"../../public/img/" + image))
-              : null
+                ? fs.unlinkSync(
+                    path.join(__dirname, "../../public/img/" + image)
+                  )
+                : null;
             }
-           
+
             res.status(200).json({
-              message: "Usuario Eliminado Correctamente"
-            })
-          }else{
+              message: "Usuario Eliminado Correctamente",
+            });
+          } else {
             res.status(404).json({
               error: "Usuario no eliminado",
             });
           }
         }
-      }else{
+      } else {
         res.status(404).json({
           error: "parametro invalido",
         });
@@ -283,8 +292,73 @@ const userController = {
         error: error.message,
       });
     }
-    
+  },
+  login: async (req, res) => {
+    try {
+      const resultValidation = validationResult(req);
+      if (resultValidation.errors.length > 0) {
+        return res.status(400).json({
+          errors: resultValidation.mapped(),
+        });
+      }
+      let userToLogin = await usersModel.findByLogin(req.body.email);
+      if (userToLogin) {
+        let isOkThePassword = bcryptjs.compareSync(
+          req.body.password,
+          userToLogin.password
+        );
+        if (isOkThePassword) {
+          // Eliminar la clave por seguridad
+          delete userToLogin.password;
+          // Conservar la sesión del usuario
+          req.session.userLogged = userToLogin;
 
-  }
+          const userJWT = req.session.userLogged;
+          const payload = {
+            sub: userJWT.id,
+            role: "admin",
+          };
+          const token = await jwt.sign(payload, config.development.jwtSecret);
+          req.session.token = token;
+
+          return res.status(200).json({
+            email: userToLogin.email,
+            access_token: token,
+          });
+        } else {
+          return res.status(404).json({
+            error: "Credenciales inválidas",
+          });
+        }
+      } else {
+        return res.status(404).json({
+          error: "Email no existe",
+        });
+      }
+    } catch (error) {
+      return res.status(500).json({
+        error: error.message,
+      });
+    }
+  },
+  logout: (req, res) => {
+    try {
+      // borro lo que este en sesion
+      if (req.session.userLogged) {
+        if (req.session.destroy()) {
+          return res.status(200).json({
+            message: "session ended",
+            logout: true,
+          });
+        }
+      } else {
+        return res.status(404).json({
+          message: "No hay sesion activa",
+        });
+      }
+    } catch (error) {
+      return error.message;
+    }
+  },
 };
 module.exports = userController;
